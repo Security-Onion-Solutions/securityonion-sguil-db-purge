@@ -1,3 +1,9 @@
+securityonion-sguil-db-purge (20120722-0ubuntu0securityonion12) precise; urgency=low
+
+  * add an empty line to log 
+
+ -- Doug Burks <doug.burks@gmail.com>  Sat, 04 Apr 2015 08:09:03 -0400
+
 securityonion-sguil-db-purge (20120722-0ubuntu0securityonion11) precise; urgency=low
 
   * Issue 711: Add "date" command to /usr/bin/sguil-db-purge 

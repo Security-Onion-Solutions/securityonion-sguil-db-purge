@@ -8,3 +8,4 @@ issues-406-and-428
 full-path-to-mysql-binary
 Issue-672:-sguil-db-purge:-check-for-UNCAT_MAX
 Issue-711:-Add-"date"-command-to-usrbinsguil-db-purge
+add-an-empty-line-to-log

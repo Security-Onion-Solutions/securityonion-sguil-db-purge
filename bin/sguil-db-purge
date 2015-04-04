@@ -123,3 +123,6 @@ cleanup
 
 # Output the date
 date
+
+# Output an empty line to separate daily entries in the log
+echo
