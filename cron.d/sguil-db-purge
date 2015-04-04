@@ -1,0 +1,8 @@
+# /etc/cron.d/sguil-db-purge
+#
+# crontab entry to purge old events from the Sguil database
+
+SHELL=/bin/sh
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+
+01 5	* * * root /usr/bin/sguil-db-purge >> /var/log/nsm/sguil-db-purge.log

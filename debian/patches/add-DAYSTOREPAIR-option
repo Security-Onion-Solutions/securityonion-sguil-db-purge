@@ -1,0 +1,71 @@
+Description: <short summary of the patch>
+ TODO: Put a short summary on the line above and replace this paragraph
+ with a longer explanation of this change. Complete the meta-information
+ with other relevant fields (see below for details). To make it easier, the
+ information below has been extracted from the changelog. Adjust it or drop
+ it.
+ .
+ securityonion-sguil-db-purge (20120722-0ubuntu0securityonion7) precise; urgency=low
+ .
+   * add DAYSTOREPAIR option
+Author: Doug Burks <doug.burks@gmail.com>
+
+---
+The information above should follow the Patch Tagging Guidelines, please
+checkout http://dep.debian.net/deps/dep3/ to learn about the format. Here
+are templates for supplementary fields that you might want to add:
+
+Origin: <vendor|upstream|other>, <url of original patch>
+Bug: <url in upstream bugtracker>
+Bug-Debian: http://bugs.debian.org/<bugnumber>
+Bug-Ubuntu: https://launchpad.net/bugs/<bugnumber>
+Forwarded: <no|not-needed|url proving that it has been forwarded>
+Reviewed-By: <name and email of someone who approved the patch>
+Last-Update: <YYYY-MM-DD>
+
+--- securityonion-sguil-db-purge-20120722.orig/bin/sguil-db-purge
++++ securityonion-sguil-db-purge-20120722/bin/sguil-db-purge
+@@ -29,10 +29,20 @@ PASSWORD_OPTION=
+ #PASSWORD_OPTION=-p$DB_PASSWORD
+ 
+ # How many days of data do you want to keep?
+-# Default to 365, but this can be overriden in:
+-# /etc/nsm/securityonion.conf
+ DAYSTOKEEP=365 
+-source /etc/nsm/securityonion.conf
++
++# How many days of data do you want to repair?
++DAYSTOREPAIR=365
++
++# check for variables in /etc/nsm/securityonion.conf
++SO_CONF="/etc/nsm/securityonion.conf"
++
++# add parameters to $SO_CONF if they don't already exist
++grep DAYSTOKEEP $SO_CONF >/dev/null	|| echo "DAYSTOKEEP=365"	>> $SO_CONF
++grep DAYSTOREPAIR $SO_CONF >/dev/null	|| echo "DAYSTOREPAIR=365"	>> $SO_CONF
++
++# You can override the above settings in:
++source $SO_CONF
+ 
+ ##############################################
+ # No need to change anything below this point
+@@ -42,8 +52,10 @@ source /etc/nsm/securityonion.conf
+ if [ ! -d /var/lib/mysql/$DATABASE/ ]; then exit; fi
+ 
+ KEEPDAY=`/usr/bin/mysql -u$DB_USER $PASSWORD_OPTION -BN -e "SELECT DATE_FORMAT(DATE_SUB(NOW(), INTERVAL $DAYSTOKEEP DAY), '%Y%m%d');" -D $DATABASE`
++REPAIRDAY=`/usr/bin/mysql -u$DB_USER $PASSWORD_OPTION -BN -e "SELECT DATE_FORMAT(DATE_SUB(NOW(), INTERVAL $DAYSTOREPAIR DAY), '%Y%m%d');" -D $DATABASE`
+ 
+ echo "Retention policy set to $DAYSTOKEEP days (deleting data prior to $KEEPDAY)."
++echo "Repair policy set to $DAYSTOREPAIR days (repairing tables for the last $DAYSTOREPAIR days)."
+ 
+ # Define a cleanup function
+ cleanup() {
+@@ -59,7 +71,7 @@ cleanup() {
+                         then
+                                 /usr/bin/mysql -u$DB_USER $PASSWORD_OPTION -BN -e "DROP TABLE \`$TABLE\`;" -D $DATABASE
+                         else
+-                                /usr/bin/mysql -u$DB_USER $PASSWORD_OPTION -BN -e "REPAIR TABLE \`$TABLE\`;" -D $DATABASE
++                                [ "$TABLEDAY" -gt "$REPAIRDAY" ] && /usr/bin/mysql -u$DB_USER $PASSWORD_OPTION -BN -e "REPAIR TABLE \`$TABLE\`;" -D $DATABASE
+                         fi
+                 done
+         done

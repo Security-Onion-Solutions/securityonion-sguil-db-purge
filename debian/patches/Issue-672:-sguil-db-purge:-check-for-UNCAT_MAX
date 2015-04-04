@@ -1,0 +1,84 @@
+Description: <short summary of the patch>
+ TODO: Put a short summary on the line above and replace this paragraph
+ with a longer explanation of this change. Complete the meta-information
+ with other relevant fields (see below for details). To make it easier, the
+ information below has been extracted from the changelog. Adjust it or drop
+ it.
+ .
+ securityonion-sguil-db-purge (20120722-0ubuntu0securityonion10) precise; urgency=low
+ .
+   * Issue 672:	sguil-db-purge: check for UNCAT_MAX
+Author: Doug Burks <doug.burks@gmail.com>
+
+---
+The information above should follow the Patch Tagging Guidelines, please
+checkout http://dep.debian.net/deps/dep3/ to learn about the format. Here
+are templates for supplementary fields that you might want to add:
+
+Origin: <vendor|upstream|other>, <url of original patch>
+Bug: <url in upstream bugtracker>
+Bug-Debian: http://bugs.debian.org/<bugnumber>
+Bug-Ubuntu: https://launchpad.net/bugs/<bugnumber>
+Forwarded: <no|not-needed|url proving that it has been forwarded>
+Reviewed-By: <name and email of someone who approved the patch>
+Last-Update: <YYYY-MM-DD>
+
+--- securityonion-sguil-db-purge-20120722.orig/bin/sguil-db-purge
++++ securityonion-sguil-db-purge-20120722/bin/sguil-db-purge
+@@ -34,6 +34,9 @@ DAYSTOKEEP=365
+ # How many days of data do you want to repair?
+ DAYSTOREPAIR=365
+ 
++# What's the maximum number of uncategorized events to allow?
++UNCAT_MAX=100000
++
+ # check for variables in /etc/nsm/securityonion.conf
+ SO_CONF="/etc/nsm/securityonion.conf"
+ 
+@@ -41,12 +44,15 @@ SO_CONF="/etc/nsm/securityonion.conf"
+ grep DAYSTOKEEP $SO_CONF >/dev/null	|| echo "DAYSTOKEEP=365"	>> $SO_CONF
+ grep DAYSTOREPAIR $SO_CONF >/dev/null	|| echo "DAYSTOREPAIR=365"	>> $SO_CONF
+ 
+-# You can override the above settings in:
+-source $SO_CONF
++if ! grep UNCAT_MAX $SO_CONF >/dev/null; then
++	echo >> $SO_CONF
++	echo "# What is the maximum number of uncategorized events to allow?" >> $SO_CONF
++	echo "# If this number gets too high, then sguild startup may be delayed." >> $SO_CONF
++	echo "UNCAT_MAX=100000"	>> $SO_CONF
++fi
+ 
+-##############################################
+-# No need to change anything below this point
+-##############################################
++# Read in the user's custom settings from $SO_CONF
++source $SO_CONF
+ 
+ # Check to see if there is a valid DB.  If not, exit silently.
+ if [ ! -d /var/lib/mysql/$DATABASE/ ]; then exit; fi
+@@ -55,11 +61,24 @@ KEEPDAY=`/usr/bin/mysql -u$DB_USER $PASS
+ REPAIRDAY=`/usr/bin/mysql -u$DB_USER $PASSWORD_OPTION -BN -e "SELECT DATE_FORMAT(DATE_SUB(NOW(), INTERVAL $DAYSTOREPAIR DAY), '%Y%m%d');" -D $DATABASE`
+ 
+ echo "Retention policy set to $DAYSTOKEEP days (deleting data prior to $KEEPDAY)."
+-echo "Repair policy set to $DAYSTOREPAIR days (repairing tables for the last $DAYSTOREPAIR days)."
++echo "Repair policy set to $DAYSTOREPAIR days (repairing tables back to $REPAIRDAY)."
++echo "Uncat policy set to $UNCAT_MAX uncategorized events (categorizing events until we get down to $UNCAT_MAX)."
+ 
+ # Define a cleanup function
+ cleanup() {
+ 
++	# Check to see if there are too many uncategorized events
++	UNCAT=`/usr/bin/mysql -s -u$DB_USER -D $DATABASE -e 'select count(*) from event where status=0;'`
++	if [ "$UNCAT" -le $UNCAT_MAX ]; then
++		echo "There are $UNCAT uncategorized events, which does not exceed the max of $UNCAT_MAX."
++	else
++		echo "There are $UNCAT uncategorized events, which exceeds the max of $UNCAT_MAX."
++		let UNCAT_DELTA=UNCAT-UNCAT_MAX
++		echo "Categorizing the oldest $UNCAT_DELTA events."
++		MYSQL_STRING="update event set status=1 where status=0 order by timestamp limit $UNCAT_DELTA;"
++		/usr/bin/mysql -u$DB_USER -D $DATABASE -e "$MYSQL_STRING"
++	fi
++
+ 	# Purge the history table
+         /usr/bin/mysql -u$DB_USER $PASSWORD_OPTION -BN -e "DELETE FROM history WHERE timestamp < DATE_SUB(NOW(), INTERVAL $DAYSTOKEEP DAY);" -D $DATABASE
+ 

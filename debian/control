@@ -1,0 +1,15 @@
+Source: securityonion-sguil-db-purge
+Section: net
+Priority: extra
+Maintainer: Doug Burks <doug.burks@gmail.com>
+Build-Depends: debhelper (>= 8.0.0)
+Standards-Version: 3.9.3
+Homepage: http://securityonion.blogspot.com
+#Vcs-Git: git://git.debian.org/collab-maint/securityonion-sguil-db-purge.git
+#Vcs-Browser: http://git.debian.org/?p=collab-maint/securityonion-sguil-db-purge.git;a=summary
+
+Package: securityonion-sguil-db-purge
+Architecture: all
+Depends: ${misc:Depends}
+Description: sguil-db-purge
+ sguil-db-purge manages the size of the Sguil database.

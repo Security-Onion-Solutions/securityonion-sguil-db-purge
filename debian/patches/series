@@ -1,0 +1,10 @@
+test
+fix-paths-in-script-and-cron-job
+terminate-any-orphaned-sguild-processes
+terminate-any-orphaned-sguild-processes-(no-really)
+avoid-errors-if-there-are-no-orphaned-processes
+add-DAYSTOREPAIR-option
+issues-406-and-428
+full-path-to-mysql-binary
+Issue-672:-sguil-db-purge:-check-for-UNCAT_MAX
+Issue-711:-Add-"date"-command-to-usrbinsguil-db-purge

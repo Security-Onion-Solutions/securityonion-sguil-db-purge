@@ -1,0 +1,125 @@
+#!/bin/bash
+
+# This script came from:
+# http://nsmwiki.org/Sguil_FAQ#How_do_I_expire_.28purge.29_old_information_from_the_database.3F
+# with additions by sa_zh and Doug Burks
+
+# Version:
+# 20110915
+
+# Changelog:
+# 20110914 - Initial version.
+# 20110915 - Check to see if there is a DB.  If not, exit silently.
+
+##############################################
+# Variables
+##############################################
+
+# Security Onion uses a database name of securityonion_db
+DATABASE=securityonion_db
+
+# Connect to the database using a MySQL username of root
+DB_USER=root
+
+# If you have NOT changed the MySQL root password, use the following line:
+PASSWORD_OPTION=
+
+# If you HAVE changed the MySQL root password, uncomment the next two lines and set your DB_PASSWORD
+#DB_PASSWORD=Insert_Your_Password_Here
+#PASSWORD_OPTION=-p$DB_PASSWORD
+
+# How many days of data do you want to keep?
+DAYSTOKEEP=365 
+
+# How many days of data do you want to repair?
+DAYSTOREPAIR=365
+
+# What's the maximum number of uncategorized events to allow?
+UNCAT_MAX=100000
+
+# check for variables in /etc/nsm/securityonion.conf
+SO_CONF="/etc/nsm/securityonion.conf"
+
+# add parameters to $SO_CONF if they don't already exist
+grep DAYSTOKEEP $SO_CONF >/dev/null	|| echo "DAYSTOKEEP=365"	>> $SO_CONF
+grep DAYSTOREPAIR $SO_CONF >/dev/null	|| echo "DAYSTOREPAIR=365"	>> $SO_CONF
+
+if ! grep UNCAT_MAX $SO_CONF >/dev/null; then
+	echo >> $SO_CONF
+	echo "# What is the maximum number of uncategorized events to allow?" >> $SO_CONF
+	echo "# If this number gets too high, then sguild startup may be delayed." >> $SO_CONF
+	echo "UNCAT_MAX=100000"	>> $SO_CONF
+fi
+
+# Read in the user's custom settings from $SO_CONF
+source $SO_CONF
+
+# Check to see if there is a valid DB.  If not, exit silently.
+if [ ! -d /var/lib/mysql/$DATABASE/ ]; then exit; fi
+
+# Output the date
+date
+
+# Check policies
+KEEPDAY=`/usr/bin/mysql -u$DB_USER $PASSWORD_OPTION -BN -e "SELECT DATE_FORMAT(DATE_SUB(NOW(), INTERVAL $DAYSTOKEEP DAY), '%Y%m%d');" -D $DATABASE`
+REPAIRDAY=`/usr/bin/mysql -u$DB_USER $PASSWORD_OPTION -BN -e "SELECT DATE_FORMAT(DATE_SUB(NOW(), INTERVAL $DAYSTOREPAIR DAY), '%Y%m%d');" -D $DATABASE`
+
+echo "Retention policy set to $DAYSTOKEEP days (deleting data prior to $KEEPDAY)."
+echo "Repair policy set to $DAYSTOREPAIR days (repairing tables back to $REPAIRDAY)."
+echo "Uncat policy set to $UNCAT_MAX uncategorized events (categorizing events until we get down to $UNCAT_MAX)."
+
+# Define a cleanup function
+cleanup() {
+
+	# Check to see if there are too many uncategorized events
+	UNCAT=`/usr/bin/mysql -s -u$DB_USER -D $DATABASE -e 'select count(*) from event where status=0;'`
+	if [ "$UNCAT" -le $UNCAT_MAX ]; then
+		echo "There are $UNCAT uncategorized events, which does not exceed the max of $UNCAT_MAX."
+	else
+		echo "There are $UNCAT uncategorized events, which exceeds the max of $UNCAT_MAX."
+		let UNCAT_DELTA=UNCAT-UNCAT_MAX
+		echo "Categorizing the oldest $UNCAT_DELTA events."
+		MYSQL_STRING="update event set status=1 where status=0 order by timestamp limit $UNCAT_DELTA;"
+		/usr/bin/mysql -u$DB_USER -D $DATABASE -e "$MYSQL_STRING"
+	fi
+
+	# Purge the history table
+        /usr/bin/mysql -u$DB_USER $PASSWORD_OPTION -BN -e "DELETE FROM history WHERE timestamp < DATE_SUB(NOW(), INTERVAL $DAYSTOKEEP DAY);" -D $DATABASE
+
+	# Purge the remaining tables
+        for TABLEPREFIX in "data" "event" "icmphdr" "sancp" "tcphdr" "udphdr"
+        do
+		# Check to see if the table exists
+		/usr/bin/mysql -u$DB_USER -D $DATABASE -e "SHOW TABLES LIKE '$TABLEPREFIX%';" | if grep $TABLEPREFIX >/dev/null 2>&1; then
+			# If the table exists, drop the merge table, delete the old tables, and repair the recent tables
+			echo "$TABLEPREFIX table exists, dropping old tables and repairing recent tables."
+	                /usr/bin/mysql -u$DB_USER $PASSWORD_OPTION -BN -e "DROP TABLE $TABLEPREFIX;" -D $DATABASE
+        	        TABLES=(`/usr/bin/mysql -u$DB_USER $PASSWORD_OPTION -BN -e "SHOW TABLES LIKE '$TABLEPREFIX%';" -D $DATABASE`)
+                	for TABLE in "${TABLES[@]}"; do
+                        	TABLEDAY=`echo "$TABLE" | awk -F_ '{print($3)}'`
+                       		if [ "$TABLEDAY" -lt "$KEEPDAY" ]; then
+	                                /usr/bin/mysql -u$DB_USER $PASSWORD_OPTION -BN -e "DROP TABLE \`$TABLE\`;" -D $DATABASE
+        	                else
+                	                [ "$TABLEDAY" -gt "$REPAIRDAY" ] && /usr/bin/mysql -u$DB_USER $PASSWORD_OPTION -BN -e "REPAIR TABLE \`$TABLE\`;" -D $DATABASE
+                        	fi
+                	done
+		fi
+        done
+
+}
+
+# Ask sguild to shutdown and wait 10 seconds
+/usr/sbin/nsm --server --stop
+sleep 10s
+
+# Terminate any remaining sguild processes
+ps -ef |grep "tclsh /usr/bin/sguil[d]" |awk '{print $2}' | while read PID; do kill $PID; done
+
+# Run the cleanup function
+cleanup
+
+# Start the Sguil server
+/usr/sbin/nsm --server --start 
+
+# Output the date
+date

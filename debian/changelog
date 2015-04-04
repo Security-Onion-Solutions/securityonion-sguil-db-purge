@@ -1,0 +1,66 @@
+securityonion-sguil-db-purge (20120722-0ubuntu0securityonion11) precise; urgency=low
+
+  * Issue 711: Add "date" command to /usr/bin/sguil-db-purge 
+
+ -- Doug Burks <doug.burks@gmail.com>  Sat, 04 Apr 2015 07:58:00 -0400
+
+securityonion-sguil-db-purge (20120722-0ubuntu0securityonion10) precise; urgency=low
+
+  * Issue 672:	sguil-db-purge: check for UNCAT_MAX 
+
+ -- Doug Burks <doug.burks@gmail.com>  Mon, 12 Jan 2015 14:41:45 -0500
+
+securityonion-sguil-db-purge (20120722-0ubuntu0securityonion9) precise; urgency=low
+
+  * full path to mysql binary 
+
+ -- Doug Burks <doug.burks@gmail.com>  Mon, 09 Jun 2014 09:21:16 -0400
+
+securityonion-sguil-db-purge (20120722-0ubuntu0securityonion8) precise; urgency=low
+
+  * Issue 406: sguil-db-purge needs to purge history table as well
+  * Issue 428: sguil-db-purge should check for existence of tables 
+
+ -- Doug Burks <doug.burks@gmail.com>  Mon, 09 Jun 2014 09:17:58 -0400
+
+securityonion-sguil-db-purge (20120722-0ubuntu0securityonion7) precise; urgency=low
+
+  * add DAYSTOREPAIR option 
+
+ -- Doug Burks <doug.burks@gmail.com>  Sat, 09 Nov 2013 15:37:38 -0500
+
+securityonion-sguil-db-purge (20120722-0ubuntu0securityonion6) precise; urgency=low
+
+  * avoid errors if there are no orphaned processes 
+
+ -- Doug Burks <doug.burks@gmail.com>  Thu, 04 Jul 2013 21:01:26 -0400
+
+securityonion-sguil-db-purge (20120722-0ubuntu0securityonion5) precise; urgency=low
+
+  * terminate any orphaned sguild processes (no really) 
+
+ -- Doug Burks <doug.burks@gmail.com>  Thu, 04 Jul 2013 20:35:11 -0400
+
+securityonion-sguil-db-purge (20120722-0ubuntu0securityonion4) precise; urgency=low
+
+  * terminate any orphaned sguild processes 
+
+ -- Doug Burks <doug.burks@gmail.com>  Thu, 04 Jul 2013 14:54:00 -0400
+
+securityonion-sguil-db-purge (20120722-0ubuntu0securityonion3) precise; urgency=low
+
+  * fix paths in script and cron job 
+
+ -- Doug Burks <doug.burks@gmail.com>  Fri, 19 Oct 2012 06:50:24 -0400
+
+securityonion-sguil-db-purge (20120722-0ubuntu0securityonion2) precise; urgency=low
+
+  * update packaging
+
+ -- Doug Burks <doug.burks@gmail.com>  Thu, 26 Jul 2012 17:05:55 -0400
+
+securityonion-sguil-db-purge (20120722-0ubuntu0securityonion1) precise; urgency=low
+
+  * Initial release
+
+ -- Doug Burks <doug.burks@gmail.com>  Fri, 06 Jul 2012 13:10:41 -0400
