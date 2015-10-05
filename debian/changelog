@@ -1,3 +1,9 @@
+securityonion-sguil-db-purge (20120722-0ubuntu0securityonion13) trusty; urgency=medium
+
+  * rebuild for trusty 
+
+ -- Doug Burks <doug.burks@gmail.com>  Mon, 05 Oct 2015 16:23:52 -0400
+
 securityonion-sguil-db-purge (20120722-0ubuntu0securityonion12) precise; urgency=low
 
   * add an empty line to log 
