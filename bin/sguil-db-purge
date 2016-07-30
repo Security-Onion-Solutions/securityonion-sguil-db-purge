@@ -57,36 +57,6 @@ Security Onion: Database Event Purge Script
 Usage: $0
 EOF
 }
-while getopts "k:r:u:h" OPTION
-do
-     case $OPTION in
-	 h)
-		usage
-		exit 0
-	     ;;
-	 k)
-		OPT=1
-		DAYSTOKEEP=$OPTARG
-		if ! [ $DAYSTOKEEP -ge 1 ]; then
-                        echo "Not an integer greater than zero...exiting." && exit 1
-                fi
-	     ;;
-	 r)
-		OPT=1
-		DAYSTOREPAIR=$OPTARG
-		if ! [ $DAYSTOREPAIR -ge 1 ]; then
-			echo "Not an integer greater than zero...exiting." && exit 1
-		fi
-	     ;;
-	 u)
-		OPT=1
-		UNCAT_MAX=$OPTARG
-		if ! [ $UNCAT_MAX -ge 1 ]; then
-                        echo "Not an integer greater than zero...exiting." && exit 1
-                fi
-	     ;;
-     esac
-done
 
 # add parameters to $SO_CONF if they don't already exist
 grep DAYSTOKEEP $SO_CONF >/dev/null	|| echo "DAYSTOKEEP=365"	>> $SO_CONF
@@ -99,8 +69,37 @@ if ! grep UNCAT_MAX $SO_CONF >/dev/null; then
 	echo "UNCAT_MAX=100000"	>> $SO_CONF
 fi
 
-#  If we are not using an option, read in the user's custom settings from $SO_CONF.
-[[ $OPT -ne 1 ]] && source $SO_CONF
+#  Read in the user's custom settings from $SO_CONF.
+source $SO_CONF
+
+# If user specifies an option, we will replace the values from $SO_CONF with the user-specified value(s).
+while getopts "k:r:u:h" OPTION
+do
+     case $OPTION in
+         h)
+                usage
+                exit 0
+             ;;
+         k)
+                DAYSTOKEEP=$OPTARG
+                if ! [ $DAYSTOKEEP -ge 1 ]; then
+                        echo "Not an integer greater than zero...exiting." && exit 1
+                fi
+             ;;
+         r)
+                DAYSTOREPAIR=$OPTARG
+                if ! [ $DAYSTOREPAIR -ge 1 ]; then
+                        echo "Not an integer greater than zero...exiting." && exit 1
+                fi
+             ;;
+         u)
+                UNCAT_MAX=$OPTARG
+                if ! [ $UNCAT_MAX -ge 1 ]; then
+                        echo "Not an integer greater than zero...exiting." && exit 1
+                fi
+             ;;
+     esac
+done
 
 # Check to see if there is a valid DB.  If not, exit silently.
 if [ ! -d /var/lib/mysql/$DATABASE/ ]; then exit; fi
