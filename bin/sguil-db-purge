@@ -65,46 +65,25 @@ do
 		exit 0
 	     ;;
 	 k)
+		OPT=1
 		DAYSTOKEEP=$OPTARG
 		if ! [ $DAYSTOKEEP -ge 1 ]; then
                         echo "Not an integer greater than zero...exiting." && exit 1
                 fi
-		if ! grep DAYSTOKEEP $SO_CONF >/dev/null; then
-			#DAYSTOKEEP=$OPTARG
-			echo "DAYSTOKEEP=$DAYSTOKEEP" >> $SO_CONF
-		else
-			#DAYSTOKEEP=$OPTARG
-			sed -i "s|DAYSTOKEEP.*|DAYSTOKEEP=$DAYSTOKEEP|g" $SO_CONF
-		fi
 	     ;;
 	 r)
+		OPT=1
 		DAYSTOREPAIR=$OPTARG
 		if ! [ $DAYSTOREPAIR -ge 1 ]; then
 			echo "Not an integer greater than zero...exiting." && exit 1
 		fi
-		if ! grep DAYSTOREPAIR $SO_CONF >/dev/null; then
-                        #DAYSTOREPAIR=$OPTARG
-                        echo "DAYSTOREPAIR=$DAYSTOREPAIR" >> $SO_CONF
-                else
-                        #DAYSTOREPAIR=$OPTARG
-                        sed -i "s|DAYSTOREPAIR.*|DAYSTOREPAIR=$DAYSTOREPAIR|g" $SO_CONF
-                fi
 	     ;;
 	 u)
+		OPT=1
 		UNCAT_MAX=$OPTARG
 		if ! [ $UNCAT_MAX -ge 1 ]; then
                         echo "Not an integer greater than zero...exiting." && exit 1
                 fi
-		if ! grep UNCAT_MAX $SO_CONF >/dev/null; then
-			#UNCAT_MAX=$OPTARG
-			echo >> $SO_CONF
-			echo "# What is the maximum number of uncategorized events to allow?" >> $SO_CONF
-			echo "# If this number gets too high, then sguild startup may be delayed." >> $SO_CONF
-			echo "UNCAT_MAX=$UNCAT_MAX" >> $SO_CONF
-		else
-			#UNCAT_MAX=$OPTARG
-			sed -i "s|UNCAT_MAX.*|UNCAT_MAX=$UNCAT_MAX|g" $SO_CONF
-		fi
 	     ;;
      esac
 done
@@ -120,8 +99,8 @@ if ! grep UNCAT_MAX $SO_CONF >/dev/null; then
 	echo "UNCAT_MAX=100000"	>> $SO_CONF
 fi
 
-# Read in the user's custom settings from $SO_CONF
-source $SO_CONF
+#  If we are not using an option, read in the user's custom settings from $SO_CONF.
+[[ $OPT -ne 1 ]] && source $SO_CONF
 
 # Check to see if there is a valid DB.  If not, exit silently.
 if [ ! -d /var/lib/mysql/$DATABASE/ ]; then exit; fi
