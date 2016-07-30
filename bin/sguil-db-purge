@@ -67,7 +67,7 @@ do
 	 k)
 		DAYSTOKEEP=$OPTARG
 		if ! [ $DAYSTOKEEP -ge 1 ]; then
-                        echo "Not an integer greater than zero...exiting." && exit 0
+                        echo "Not an integer greater than zero...exiting." && exit 1
                 fi
 		if ! grep DAYSTOKEEP $SO_CONF >/dev/null; then
 			#DAYSTOKEEP=$OPTARG
@@ -80,7 +80,7 @@ do
 	 r)
 		DAYSTOREPAIR=$OPTARG
 		if ! [ $DAYSTOREPAIR -ge 1 ]; then
-			echo "Not an integer greater than zero...exiting." && exit 0
+			echo "Not an integer greater than zero...exiting." && exit 1
 		fi
 		if ! grep DAYSTOREPAIR $SO_CONF >/dev/null; then
                         #DAYSTOREPAIR=$OPTARG
@@ -93,7 +93,7 @@ do
 	 u)
 		UNCAT_MAX=$OPTARG
 		if ! [ $UNCAT_MAX -ge 1 ]; then
-                        echo "Not an integer greater than zero...exiting." && exit 0
+                        echo "Not an integer greater than zero...exiting." && exit 1
                 fi
 		if ! grep UNCAT_MAX $SO_CONF >/dev/null; then
 			#UNCAT_MAX=$OPTARG
