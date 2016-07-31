@@ -19,10 +19,10 @@
 DATABASE=securityonion_db
 
 # Connect to the database using a MySQL username of root
-DB_USER=root
+#DB_USER=root
 
 # If you have NOT changed the MySQL root password, use the following line:
-PASSWORD_OPTION=
+#PASSWORD_OPTION=
 
 # If you HAVE changed the MySQL root password, uncomment the next two lines and set your DB_PASSWORD
 #DB_PASSWORD=Insert_Your_Password_Here
@@ -108,8 +108,9 @@ if [ ! -d /var/lib/mysql/$DATABASE/ ]; then exit; fi
 date
 
 # Check policies
-KEEPDAY=`/usr/bin/mysql -u$DB_USER $PASSWORD_OPTION -BN -e "SELECT DATE_FORMAT(DATE_SUB(NOW(), INTERVAL $DAYSTOKEEP DAY), '%Y%m%d');" -D $DATABASE`
-REPAIRDAY=`/usr/bin/mysql -u$DB_USER $PASSWORD_OPTION -BN -e "SELECT DATE_FORMAT(DATE_SUB(NOW(), INTERVAL $DAYSTOREPAIR DAY), '%Y%m%d');" -D $DATABASE`
+MYSQL="/usr/bin/mysql --defaults-file=/etc/mysql/debian.cnf -D $DATABASE"
+KEEPDAY=`$MYSQL -BN -e "SELECT DATE_FORMAT(DATE_SUB(NOW(), INTERVAL $DAYSTOKEEP DAY), '%Y%m%d');"`
+REPAIRDAY=`$MYSQL -BN -e "SELECT DATE_FORMAT(DATE_SUB(NOW(), INTERVAL $DAYSTOREPAIR DAY), '%Y%m%d');"`
 
 echo "Retention policy set to $DAYSTOKEEP days (deleting data prior to $KEEPDAY)."
 echo "Repair policy set to $DAYSTOREPAIR days (repairing tables back to $REPAIRDAY)."
@@ -119,7 +120,7 @@ echo "Uncat policy set to $UNCAT_MAX uncategorized events (categorizing events u
 cleanup() {
 
 	# Check to see if there are too many uncategorized events
-	UNCAT=`/usr/bin/mysql -s -u$DB_USER -D $DATABASE -e 'select count(*) from event where status=0;'`
+	UNCAT=`$MYSQL -s -e 'select count(*) from event where status=0;'`
 	if [ "$UNCAT" -le $UNCAT_MAX ]; then
 		echo "There are $UNCAT uncategorized events, which does not exceed the max of $UNCAT_MAX."
 	else
@@ -127,27 +128,27 @@ cleanup() {
 		let UNCAT_DELTA=UNCAT-UNCAT_MAX
 		echo "Categorizing the oldest $UNCAT_DELTA events."
 		MYSQL_STRING="update event set status=1 where status=0 order by timestamp limit $UNCAT_DELTA;"
-		/usr/bin/mysql -u$DB_USER -D $DATABASE -e "$MYSQL_STRING"
+		$MYSQL -e "$MYSQL_STRING"
 	fi
 
 	# Purge the history table
-        /usr/bin/mysql -u$DB_USER $PASSWORD_OPTION -BN -e "DELETE FROM history WHERE timestamp < DATE_SUB(NOW(), INTERVAL $DAYSTOKEEP DAY);" -D $DATABASE
+        $MYSQL -BN -e "DELETE FROM history WHERE timestamp < DATE_SUB(NOW(), INTERVAL $DAYSTOKEEP DAY);"
 
 	# Purge the remaining tables
         for TABLEPREFIX in "data" "event" "icmphdr" "sancp" "tcphdr" "udphdr"
         do
 		# Check to see if the table exists
-		/usr/bin/mysql -u$DB_USER -D $DATABASE -e "SHOW TABLES LIKE '$TABLEPREFIX%';" | if grep $TABLEPREFIX >/dev/null 2>&1; then
+		$MYSQL -e "SHOW TABLES LIKE '$TABLEPREFIX%';" | if grep $TABLEPREFIX >/dev/null 2>&1; then
 			# If the table exists, drop the merge table, delete the old tables, and repair the recent tables
 			echo "$TABLEPREFIX table exists, dropping old tables and repairing recent tables."
-	                /usr/bin/mysql -u$DB_USER $PASSWORD_OPTION -BN -e "DROP TABLE $TABLEPREFIX;" -D $DATABASE
-        	        TABLES=(`/usr/bin/mysql -u$DB_USER $PASSWORD_OPTION -BN -e "SHOW TABLES LIKE '$TABLEPREFIX%';" -D $DATABASE`)
+	                $MYSQL -BN -e "DROP TABLE $TABLEPREFIX;"
+        	        TABLES=(`$MYSQL -BN -e "SHOW TABLES LIKE '$TABLEPREFIX%';"`)
                 	for TABLE in "${TABLES[@]}"; do
                         	TABLEDAY=`echo "$TABLE" | awk -F_ '{print($3)}'`
                        		if [ "$TABLEDAY" -lt "$KEEPDAY" ]; then
-	                                /usr/bin/mysql -u$DB_USER $PASSWORD_OPTION -BN -e "DROP TABLE \`$TABLE\`;" -D $DATABASE
+	                                $MYSQL -BN -e "DROP TABLE \`$TABLE\`;"
         	                else
-                	                [ "$TABLEDAY" -gt "$REPAIRDAY" ] && /usr/bin/mysql -u$DB_USER $PASSWORD_OPTION -BN -e "REPAIR TABLE \`$TABLE\`;" -D $DATABASE
+                	                [ "$TABLEDAY" -gt "$REPAIRDAY" ] && $MYSQL -BN -e "REPAIR TABLE \`$TABLE\`;"
                         	fi
                 	done
 		fi
