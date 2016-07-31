@@ -11,3 +11,4 @@ Issue-711:-Add-"date"-command-to-usrbinsguil-db-purge
 add-an-empty-line-to-log
 Issue-971:-securityonion-sguil-db-purge:-add-command-line-options
 Issue-972:-securityonion-sguil-db-purge:-update-mysql-call
+Issue-974:-securityonion-sguil-db-purge:-check-for-privileges

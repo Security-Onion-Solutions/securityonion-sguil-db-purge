@@ -104,6 +104,9 @@ done
 # Check to see if there is a valid DB.  If not, exit silently.
 if [ ! -d /var/lib/mysql/$DATABASE/ ]; then exit; fi
 
+# Check for privs
+[ "$(id -u)" -ne 0 ] && echo "This script must be run using sudo!" && exit 1
+
 # Output the date
 date
 
