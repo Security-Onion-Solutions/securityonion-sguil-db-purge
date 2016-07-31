@@ -1,3 +1,9 @@
+securityonion-sguil-db-purge (20120722-0ubuntu0securityonion17) trusty; urgency=medium
+
+  * move priv check to top of script 
+
+ -- Doug Burks <doug.burks@gmail.com>  Sun, 31 Jul 2016 14:05:26 -0400
+
 securityonion-sguil-db-purge (20120722-0ubuntu0securityonion16) trusty; urgency=medium
 
   * Issue 974: securityonion-sguil-db-purge: check for privileges 
